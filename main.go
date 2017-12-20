@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"strconv"
 
@@ -21,8 +22,13 @@ func handleStatusCodeRequest(c echo.Context) error {
 }
 
 func main() {
-	e := echo.New()
+	tlsPtr := flag.Bool("tls", false, "use https (ssl/tls) encryption")
+	addrPtr := flag.String("address", "localhost:8080", "server address as hostname:port e.g. 1337.my.org:443")
+	certFilePtr := flag.String("certFile", "mycert1.cer", "certificate file (try https://github.com/deckarep/EasyCert)")
+	keyFilePtr := flag.String("keyFile", "mycert1.key", "key file (try https://github.com/deckarep/EasyCert)")
+	flag.Parse()
 
+	e := echo.New()
 	e.File("/", "public/index.html")
 
 	e.GET("/:statusCode", handleStatusCodeRequest)
@@ -40,5 +46,9 @@ func main() {
 	e.HEAD("/:statusCode", handleStatusCodeRequest)
 	e.HEAD("/:statusCode/*", handleStatusCodeRequest)
 
-	e.Logger.Fatal(e.Start(":8080"))
+	if *tlsPtr {
+		e.Logger.Fatal(e.StartTLS(*addrPtr, *certFilePtr, *keyFilePtr))
+	} else {
+		e.Logger.Fatal(e.Start(*addrPtr))
+	}
 }
